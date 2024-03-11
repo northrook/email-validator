@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Northrook\Core;
 
 use Egulias\EmailValidator\EmailValidator as Validator;
+use Egulias\EmailValidator\Result\InvalidEmail;
 use Egulias\EmailValidator\Validation\Extra\SpoofCheckValidation;
 use Egulias\EmailValidator\Validation\MultipleValidationWithAnd ;
 use Egulias\EmailValidator\Validation\NoRFCWarningsValidation;
@@ -34,16 +35,18 @@ final class EmailValidator
     private Validator $validator;
 
     public readonly bool $isValid;
+    public readonly array $warnings;
+    public readonly ?InvalidEmail $error;
 
     public function __invoke() : bool{
         return $this->isValid;
     }
 
     public function __construct(
-
+        public readonly string $email
     ) {
 
-        $validator = new Validator();
+        $this->validator = new Validator();
 
         $validate = new MultipleValidationWithAnd(
             [
@@ -52,10 +55,13 @@ final class EmailValidator
             ]
         );
 
-        $this->isValid = $validator->isValid(
-            $this->value ?? '',
+        $this->isValid = $this->validator->isValid(
+            $this->email,
             $validate,
         );
+
+        $this->warnings = $this->validator->getWarnings();
+        $this->error = $this->validator->getError();
     }
 
 }
